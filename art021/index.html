@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>ROBINEAU</title>
+<style>
+  html,body{height:100%;margin:0;background:#fff;color:#111;
+    font:300 13px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+  #s{position:fixed;inset:0;display:flex;flex-direction:column;
+     align-items:center;justify-content:center;letter-spacing:2px;text-transform:uppercase}
+  #b{width:180px;height:1px;background:#eee;margin-top:18px;overflow:hidden}
+  #f{height:100%;width:0;background:#111;transition:width .25s ease}
+  #m{font-size:11px;color:#999}
+</style></head>
+<body><div id="s"><div id="m">ROBINEAU</div><div id="b"><div id="f"></div></div></div>
+<script>
+(function(){
+  var S=document.getElementById('s'),M=document.getElementById('m'),F=document.getElementById('f');
+  function fail(t){ M.textContent=t; F.style.width='0'; }
+  var raw=location.hash.slice(1);
+  if(!raw){ return fail('Link incomplete'); }
+  function b64u(s){ s=s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4)s+='=';
+    var b=atob(s),a=new Uint8Array(b.length); for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i); return a; }
+  var keyBytes; try{ keyBytes=b64u(raw); }catch(e){ return fail('Link invalid'); }
+  if(keyBytes.length!==32) return fail('Link invalid');
+
+  var KEY=null, cache={}, MAP={};
+  function dec(buf){ return crypto.subtle.decrypt({name:'AES-GCM',iv:buf.slice(0,12)},KEY,buf.slice(12)); }
+
+  // exposed to the page: resolve an image path to a decrypted blob URL
+  window.__dec=function(path){
+    if(cache[path]) return cache[path];
+    var f=MAP[path];
+    if(!f) return Promise.resolve('');
+    return cache[path]=fetch('a/'+f).then(function(r){return r.arrayBuffer();})
+      .then(dec).then(function(p){ return URL.createObjectURL(new Blob([p],{type:'image/jpeg'})); })
+      .catch(function(){ return ''; });
+  };
+
+  crypto.subtle.importKey('raw',keyBytes,'AES-GCM',false,['decrypt'])
+    .then(function(k){ KEY=k; F.style.width='35%'; return fetch('p.bin'); })
+    .then(function(r){ if(!r.ok) throw 0; return r.arrayBuffer(); })
+    .then(function(b){ F.style.width='70%'; return dec(b); })
+    .then(function(plain){
+      var o=JSON.parse(new TextDecoder().decode(plain));
+      MAP=o.map; F.style.width='100%';
+      setTimeout(function(){
+        document.open(); document.write(o.html); document.close();
+      },120);
+    })
+    .catch(function(){ fail('Link invalid'); });
+})();
+</script></body></html>
