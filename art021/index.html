@@ -32,13 +32,13 @@
     if(cache[path]) return cache[path];
     var f=MAP[path];
     if(!f) return Promise.resolve('');
-    return cache[path]=fetch('a/'+f).then(function(r){return r.arrayBuffer();})
+    return cache[path]=fetch('a/'+f+'?b=b3d314990101').then(function(r){return r.arrayBuffer();})
       .then(dec).then(function(p){ return URL.createObjectURL(new Blob([p],{type:'image/jpeg'})); })
       .catch(function(){ return ''; });
   };
 
   crypto.subtle.importKey('raw',keyBytes,'AES-GCM',false,['decrypt'])
-    .then(function(k){ KEY=k; F.style.width='35%'; return fetch('p.bin'); })
+    .then(function(k){ KEY=k; F.style.width='35%'; return fetch('p.bin?b=b3d314990101'); })
     .then(function(r){ if(!r.ok) throw 0; return r.arrayBuffer(); })
     .then(function(b){ F.style.width='70%'; return dec(b); })
     .then(function(plain){
